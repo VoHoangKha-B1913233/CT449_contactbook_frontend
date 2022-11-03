@@ -5,11 +5,8 @@
         </div>
         <div class="mt-3 col-md-6">
             <h4>Danh bạ <i class="fas fa-address-book"></i></h4>
-            <ContactList
-                v-if="fillteredContactsCount > 0"
-                :contacts="fillteredContacts"
-                v-model:activeIndex="activeIndex"
-            />
+            <ContactList v-if="fillteredContactsCount > 0" :contacts="fillteredContacts"
+                v-model:activeIndex="activeIndex" />
             <p v-else>Không có liên hệ nào.</p>
             <div class="mt-3 row justify-content-around align-items-center">
                 <button class="btn btn-sm btn-primary" @click="refreshList()">
@@ -31,100 +28,107 @@
                     Chi tiết Liên hệ
                     <i class="fas fa-address-card"></i>
                 </h4>
-                <ContactCard :contact="activeContact"/>
+                <ContactCard :contact="activeContact" />
+                <router-link :to="{
+                    name: 'contact.edit',
+                    params: { id: activeContact._id },
+                }">
+                    <span class="mt-2 badge badge-warning">
+                        <i class="fas fa-edit"></i> Hiệu chỉnh</span>
+                </router-link>
             </div>
         </div>
     </div>
 </template>
 
 <script>
-    import InputSearch from '../components/InputSearch.vue';
-    import ContactList from '../components/ContactList.vue';
-    import ContactCard from '../components/ContactCard.vue';
-    import ContactService from "../services/contact.service";
-    export default {
-        components: {
-            InputSearch,
-            ContactCard,
-            ContactList,
+import InputSearch from '../components/InputSearch.vue';
+import ContactList from '../components/ContactList.vue';
+import ContactCard from '../components/ContactCard.vue';
+import ContactService from "../services/contact.service";
+export default {
+    components: {
+        InputSearch,
+        ContactCard,
+        ContactList,
+    },
+
+    data() {
+        return {
+            contacts: [],
+            activeIndex: -1,
+            searchText: "",
+        };
+    },
+
+    watch: {
+        //Gima sat su thay doi cua searchText
+        //Bo chon phan tu dang duoc chon
+        searchText() {
+            this.activeIndex = -1;
+        }
+    },
+    computed: {
+        //chuyen doi doi tuong contact -> chuoi de tien tim kiem
+        contactString() {
+            return this.contacts.map((contact) => {
+                const { name, email, address, phone } = contact;
+                return [name, email, address, phone].join("");
+            })
         },
 
-        data(){
-            return {
-                contacts :[],
-                activeIndex: -1,
-                searchText: "",
-            };
+        //tra ve cac contact chua thong tin can tim kiem
+        fillteredContacts() {
+            if (!this.searchText) return this.contacts;
+            return this.contacts.filter((_count, index) =>
+                this.contactString[index].includes(this.searchText))
         },
-
-        watch: {
-            //Gima sat su thay doi cua searchText
-            //Bo chon phan tu dang duoc chon
-            searchText() {
-                this.activeIndex = -1;
+        activeContact() {
+            if (this.activeIndex < 0) return null;
+            return this.fillteredContacts[this.activeIndex];
+        },
+        fillteredContactsCount() {
+            return this.fillteredContacts.length;
+        }
+    },
+    methods: {
+        async retrieveContacts() {
+            try {
+                this.contacts = await ContactService.getAll();
+            }
+            catch (error) {
+                console.log(error);
             }
         },
-        computed: {
-            //chuyen doi doi tuong contact -> chuoi de tien tim kiem
-            contactString() {
-                return this.contacts.map((contact) => {
-                    const {name, email, address, phone} = contact;
-                    return [name, email, address, phone].join("");
-                })
-            },
-
-            //tra ve cac contact chua thong tin can tim kiem
-            fillteredContacts(){
-                if (!this.searchText) return this.contacts;
-                return this.contacts.filter((_count, index) => 
-                    this.contactString[index].includes(this.searchText))
-            },
-            activeContact(){
-                if(this.activeIndex < 0) return null;
-                return this.fillteredContacts[this.activeIndex];
-            },
-            fillteredContactsCount() {
-                return this.fillteredContacts.length;
-            }
+        refreshList() {
+            this.retrieveContacts();
+            this.activeIndex = -1;
         },
-        methods: {
-            async retrieveContacts(){
+        async removeAllContacts() {
+            if (confirm("Bạn muốn xóa tất cả Liên hệ?")) {
                 try {
-                    this.contacts = await ContactService.getAll();
+                    await ContactService.deleteAll();
+                    this.refreshList();
                 }
-                catch (error){
+                catch (error) {
                     console.log(error);
                 }
-            },
-            refreshList(){
-                this.retrieveContacts();
-                this.activeIndex = -1;
-            },
-            async removeAllContacts(){
-                if (confirm("Bạn muốn xóa tất cả Liên hệ?")){
-                    try {
-                        await ContactService.deleteAll();
-                        this.refreshList();
-                    }
-                    catch (error) {
-                        console.log(error);
-                    }
-                }
-            },
-
-            goToAddContact(){
-                this.$router.push({name: "contact.add"});
             }
         },
-        mounted() {
-            this.refreshList();
-        },
-    };
+
+        goToAddContact() {
+            this.$router.push({ name: "contact.add" });
+        }
+    },
+    mounted() {
+        this.refreshList();
+    },
+};
 </script>
 
 <style>
-    .page {
-        text-align: left;
-        max-width: 750px;
-    }
+.page {
+    text-align: left;
+    max-width: 750px;
+}
 </style>
