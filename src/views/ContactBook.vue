@@ -4,10 +4,17 @@
             <InputSearch v-model="searchText" />
         </div>
         <div class="mt-3 col-md-6">
-            <h4>Danh bạ <i class="fas fa-address-book"></i></h4>
-            <ContactList v-if="fillteredContactsCount > 0" :contacts="fillteredContacts"
-                v-model:activeIndex="activeIndex" />
+            <h4>
+                Danh bạ
+                <i class="fas fa-address-book"></i>
+            </h4>
+            <ContactList
+                v-if="filteredContactsCount > 0"
+                :contacts="filteredContacts"
+                v-model:activeIndex="activeIndex"
+            />
             <p v-else>Không có liên hệ nào.</p>
+
             <div class="mt-3 row justify-content-around align-items-center">
                 <button class="btn btn-sm btn-primary" @click="refreshList()">
                     <i class="fas fa-redo"></i> Làm mới
@@ -17,7 +24,10 @@
                     <i class="fas fa-plus"></i> Thêm mới
                 </button>
 
-                <button class="btn btn-sm btn-danger" @click="removeAllContacts">
+                <button
+                    class="btn btn-sm btn-danger"
+                    @click="removeAllContacts"
+                >
                     <i class="fas fa-trash"></i> Xóa tất cả
                 </button>
             </div>
@@ -25,16 +35,19 @@
         <div class="mt-3 col-md-6">
             <div v-if="activeContact">
                 <h4>
-                    Chi tiết Liên hệ
+                    Chi tiết liên hệ
                     <i class="fas fa-address-card"></i>
                 </h4>
                 <ContactCard :contact="activeContact" />
-                <router-link :to="{
-                    name: 'contact.edit',
-                    params: { id: activeContact._id },
-                }">
+                <router-link
+                    :to="{
+                        name: 'contact.edit',
+                        params: { id: activeContact._id },
+                    }"
+                >
                     <span class="mt-2 badge badge-warning">
-                        <i class="fas fa-edit"></i> Hiệu chỉnh</span>
+                        <i class="fas fa-edit"></i> Hiệu chỉnh
+                    </span>
                 </router-link>
             </div>
         </div>
@@ -42,17 +55,18 @@
 </template>
 
 <script>
-import InputSearch from '../components/InputSearch.vue';
-import ContactList from '../components/ContactList.vue';
-import ContactCard from '../components/ContactCard.vue';
-import ContactService from "../services/contact.service";
+import ContactCard from "@/components/ContactCard.vue";
+import InputSearch from "@/components/InputSearch.vue";
+import ContactList from "@/components/ContactList.vue";
+import ContactService from "@/services/contact.service";
+
 export default {
     components: {
-        InputSearch,
         ContactCard,
+        InputSearch,
         ContactList,
     },
-
+    //Đoạn mã xử lý đầy đủ sẽ trình bày bên dưới
     data() {
         return {
             contacts: [],
@@ -60,57 +74,56 @@ export default {
             searchText: "",
         };
     },
-
     watch: {
-        //Gima sat su thay doi cua searchText
-        //Bo chon phan tu dang duoc chon
+        // Giám sát các thay đổi của biến searchText.
+        // Bỏ chọn phần tử đang được chọn trong danh sách.
         searchText() {
             this.activeIndex = -1;
-        }
+        },
     },
     computed: {
-        //chuyen doi doi tuong contact -> chuoi de tien tim kiem
-        contactString() {
+        // Chuyển các đối tượng contact thành chuỗi để tiện cho tìm kiếm.
+        contactStrings() {
             return this.contacts.map((contact) => {
                 const { name, email, address, phone } = contact;
                 return [name, email, address, phone].join("");
-            })
+            });
         },
-
-        //tra ve cac contact chua thong tin can tim kiem
-        fillteredContacts() {
+        // Trả về các contact có chứa thông tin cần tìm kiếm.
+        filteredContacts() {
             if (!this.searchText) return this.contacts;
-            return this.contacts.filter((_count, index) =>
-                this.contactString[index].includes(this.searchText))
+            return this.contacts.filter((_contact, index) =>
+                this.contactStrings[index].includes(this.searchText)
+            );
         },
         activeContact() {
             if (this.activeIndex < 0) return null;
-            return this.fillteredContacts[this.activeIndex];
+            return this.filteredContacts[this.activeIndex];
         },
-        fillteredContactsCount() {
-            return this.fillteredContacts.length;
-        }
+        filteredContactsCount() {
+            return this.filteredContacts.length;
+        },
     },
     methods: {
         async retrieveContacts() {
             try {
                 this.contacts = await ContactService.getAll();
-            }
-            catch (error) {
+            } catch (error) {
                 console.log(error);
             }
         },
+
         refreshList() {
             this.retrieveContacts();
             this.activeIndex = -1;
         },
+
         async removeAllContacts() {
             if (confirm("Bạn muốn xóa tất cả Liên hệ?")) {
                 try {
                     await ContactService.deleteAll();
                     this.refreshList();
-                }
-                catch (error) {
+                } catch (error) {
                     console.log(error);
                 }
             }
@@ -118,7 +131,7 @@ export default {
 
         goToAddContact() {
             this.$router.push({ name: "contact.add" });
-        }
+        },
     },
     mounted() {
         this.refreshList();
@@ -126,7 +139,7 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
 .page {
     text-align: left;
     max-width: 750px;
